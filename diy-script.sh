@@ -29,6 +29,33 @@ function git_sparse_clone() {
   cd .. && rm -rf $repodir
 }
 
+# 添加 kmod-inet-diag 依赖
+sed -i '/define KernelPackage\/wireguard/,/$(eval $(call KernelPackage,wireguard))/c\
+\
+define KernelPackage/inet-diag\n\
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)\n\
+  TITLE:=INET diag support for ss utility\n\
+  KCONFIG:= \\\n\
+        CONFIG_INET_DIAG \\\n\
+        CONFIG_INET_TCP_DIAG \\\n\
+        CONFIG_INET_UDP_DIAG \\\n\
+        CONFIG_INET_RAW_DIAG \\\n\
+        CONFIG_INET_DIAG_DESTROY=n\n\
+  FILES:= \\\n\
+        $(LINUX_DIR)/net/ipv4/inet_diag.ko \\\n\
+        $(LINUX_DIR)/net/ipv4/tcp_diag.ko \\\n\
+        $(LINUX_DIR)/net/ipv4/udp_diag.ko \\\n\
+        $(LINUX_DIR)/net/ipv4/raw_diag.ko@ge4.10\n\
+  AUTOLOAD:=$(call AutoLoad,31,inet_diag tcp_diag udp_diag raw_diag@ge4.10)\n\
+endef\n\
+\n\
+define KernelPackage/inet-diag/description\n\
+  Support for INET (TCP, DCCP, etc) socket monitoring interface used by\n\
+  native Linux tools such as ss.\n\
+endef\n\
+\n\
+$(eval $(call KernelPackage,inet-diag))' package/kernel/linux/modules/netsupport.mk
+
 # 添加额外插件
 git clone --depth=1 https://github.com/kongfl888/luci-app-adguardhome package/luci-app-adguardhome
 git clone --depth=1 -b openwrt-18.06 https://github.com/tty228/luci-app-wechatpush package/luci-app-serverchan
